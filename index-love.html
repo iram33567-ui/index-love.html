@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Daily Love Quotes</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#fff1f6;--card:#ffffff;--accent:#ff6b81;--muted:#666}
+  body{font-family:Montserrat,system-ui,Arial; margin:0; min-height:100vh;
+       display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#fff1f6,#ffeef2);}
+  .app{width:94%;max-width:420px;padding:20px}
+  .card{background:var(--card);border-radius:14px;padding:18px;box-shadow:0 8px 30px rgba(0,0,0,0.08);}
+  h1{margin:0 0 12px;font-size:20px;color:var(--accent);text-align:center}
+  .quote{font-size:18px;color:#222;line-height:1.45;min-height:120px;display:flex;align-items:center;justify-content:center;text-align:center;padding:12px}
+  .meta{font-size:13px;color:var(--muted);text-align:center;margin-top:10px}
+  .controls{display:flex;gap:8px;margin-top:14px}
+  button{flex:1;padding:10px;border-radius:10px;border:0;font-weight:600;cursor:pointer}
+  .btn-primary{background:var(--accent);color:#fff}
+  .btn-secondary{background:#fff;border:1px solid #ffd3dc;color:var(--accent)}
+  .small{font-size:13px;padding:8px;border-radius:8px}
+  .actions{display:flex;gap:8px;margin-top:10px;justify-content:center}
+  .fav{background:#fff;border:1px solid #ffd3dc;padding:8px 10px;border-radius:8px}
+  .footer{font-size:12px;color:var(--muted);text-align:center;margin-top:14px}
+</style>
+</head>
+<body>
+  <div class="app">
+    <div class="card">
+      <h1>Daily Love Quotes</h1>
+
+      <div id="quoteBox" class="quote">Loading…</div>
+      <div id="author" class="meta"></div>
+
+      <div class="controls">
+        <button id="prevBtn" class="btn-secondary small">Prev</button>
+        <button id="nextBtn" class="btn-primary small">Next</button>
+      </div>
+
+      <div class="actions">
+        <button id="favBtn" class="fav">♡ Favorite</button>
+        <button id="shareBtn" class="fav">Share</button>
+      </div>
+
+      <div class="footer">Developed by: Iram Shahzadi</div>
+    </div>
+  </div>
+
+<script>
+/* ====== Quotes list (add more) ====== */
+const quotes = [
+  {t:"I love you not only for what you are, but for what I am when I am with you.", a:"Roy Croft"},
+  {t:"You are every reason, every hope and every dream I’ve ever had.", a:"Nicholas Sparks"},
+  {t:"Meeting you was like listening to a song for the first time and knowing it would be my favorite.", a:"Unknown"},
+  {t:"In you, I’ve found the love of my life and my closest, truest friend.", a:"Unknown"},
+  {t:"My heart is and always will be yours.", a:"Jane Austen"},
+  {t:"You are my today and all of my tomorrows.", a:"Leo Christopher"},
+  {t:"I still get butterflies even though I’ve seen you a hundred times.", a:"Unknown"},
+  {t:"Where there is love there is life.", a:"Mahatma Gandhi"}
+];
+
+/* ====== Helpers ====== */
+const quoteBox = document.getElementById('quoteBox');
+const authorBox = document.getElementById('author');
+const nextBtn = document.getElementById('nextBtn');
+const prevBtn = document.getElementById('prevBtn');
+const favBtn = document.getElementById('favBtn');
+const shareBtn = document.getElementById('shareBtn');
+
+let idx = 0;
+
+/* Show daily quote by date (so it changes each day deterministically) */
+function dailyIndex(){
+  const d = new Date();
+  // use day-of-year mod quotes length so it rotates daily
+  const start = new Date(d.getFullYear(),0,0);
+  const diff = d - start;
+  const day = Math.floor(diff / (1000*60*60*24));
+  return day % quotes.length;
+}
+
+function showQuote(i){
+  idx = (i + quotes.length) % quotes.length;
+  const q = quotes[idx];
+  quoteBox.textContent = q.t;
+  authorBox.textContent = q.a ? ("— " + q.a) : "";
+  // update favorite button text
+  const favs = JSON.parse(localStorage.getItem('love_favs')||'[]');
+  favBtn.textContent = favs.includes(q.t) ? '♥ Favorited' : '♡ Favorite';
+}
+
+/* Prev/Next buttons */
+nextBtn.addEventListener('click', ()=> showQuote(idx+1));
+prevBtn.addEventListener('click', ()=> showQuote(idx-1));
+
+/* Favorite handling (localStorage) */
+favBtn.addEventListener('click', ()=>{
+  const q = quotes[idx].t;
+  let favs = JSON.parse(localStorage.getItem('love_favs')||'[]');
+  if(favs.includes(q)){
+    favs = favs.filter(x=>x!==q);
+    favBtn.textContent = '♡ Favorite';
+  } else {
+    favs.push(q);
+    favBtn.textContent = '♥ Favorited';
+  }
+  localStorage.setItem('love_favs', JSON.stringify(favs));
+});
+
+/* Share using Web Share API fallback to copy */
+shareBtn.addEventListener('click', async ()=>{
+  const text = `${quotes[idx].t} — ${quotes[idx].a||''}`;
+  if(navigator.share){
+    try { await navigator.share({text}); return; } catch(e){ /* ignore */ }
+  }
+  // fallback: copy to clipboard
+  try {
+    await navigator.clipboard.writeText(text);
+    alert('Quote copied to clipboard. Share it on WhatsApp or Instagram!');
+  } catch(e){
+    prompt('Copy this quote:', text);
+  }
+});
+
+/* show daily quote initially */
+window.addEventListener('load', ()=> showQuote(dailyIndex()));
+</script>
+</body>
+</html>
